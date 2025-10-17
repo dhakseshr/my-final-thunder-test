@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Webhook Tester - Final Live Webhook Test</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root{
+      --bg: #0f1320;
+      --panel: #151a2c;
+      --muted: #8ea0c0;
+      --text: #e9f0ff;
+      --accent: #5ad1e6;
+      --accent2: #7bf1a8;
+      --danger: #ff6b6b;
+      --warn: #ffcc66;
+      --ok: #7bf1a8;
+      --border: #273050;
+      --code: #0b0f1a;
+      --chip: #1e2540;
+      --shadow: 0 8px 30px rgba(0,0,0,0.25);
+    }
+    * { box-sizing: border-box; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      background: radial-gradient(1200px 800px at 10% -20%, #1c2340 0%, #0f1320 55%) no-repeat, var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.35;
+    }
+    header{
+      position: sticky; top:0; z-index:10;
+      background: linear-gradient(to bottom, rgba(15,19,32,0.9), rgba(15,19,32,0.6));
+      backdrop-filter: blur(6px);
+      border-bottom: 1px solid var(--border);
+    }
+    .wrap{ max-width: 1200px; margin: 0 auto; padding: 16px; }
+    .brand{
+      display:flex; align-items:center; gap:12px;
+    }
+    .logo{
+      width:36px;height:36px;border-radius:10px;
+      background: conic-gradient(from 180deg at 50% 50%, #5ad1e6, #7bf1a8, #9ea8ff, #5ad1e6);
+      filter: saturate(1.2) contrast(1.05);
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
+    }
+    h1{ font-size: 20px; margin:0; letter-spacing: .3px; }
+    .sub{ color: var(--muted); font-size: 13px; margin-top:2px }
+    main .wrap{ display:grid; gap:16px; grid-template-columns: 1.1fr .9fr; }
+    @media (max-width: 980px){
+      main .wrap{ grid-template-columns: 1fr; }
+    }
+    section{
+      background: linear-gradient(180deg, rgba(21,26,44,0.85), rgba(21,26,44,0.7));
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      overflow: clip;
+    }
+    section header{
+      position: sticky; top: 56px; background: none; border: none; backdrop-filter: none;
+    }
+    .sec-title{
+      padding: 14px 16px; border-bottom: 1px solid var(--border);
+      font-weight: 600; letter-spacing:.2px; display:flex; justify-content: space-between; align-items:center;
+      background: linear-gradient(to right, rgba(94,129,255,0.06), transparent 30%);
+    }
+    .card{ padding: 14px; }
+    .row{ display:flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+    .row > * { flex: 1 1 auto; min-width: 160px; }
+    label{ font-size: 12px; color: var(--muted); display:block; margin-bottom:6px; }
+    input[type=text], input[type=number], select, textarea{
+      width:100%; background: #0b1022; color: var(--text);
+      border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px;
+      outline: none; transition: border-color .2s, box-shadow .2s;
+    }
+    textarea{ min-height: 180px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; resize: vertical; }
+    input:focus, select:focus, textarea:focus{ border-color: #6bb8ff; box-shadow: 0 0 0 3px rgba(107,184,255,.15); }
+    .btn{
+      display:inline-flex; align-items:center; gap:8px; padding: 10px 14px;
+      border-radius: 10px; border: 1px solid var(--border); background: #121733; color: var(--text);
+      cursor: pointer; transition: transform .06s ease, background .2s;
+      user-select: none;
+    }
+    .btn:hover{ background: #1a2144; }
+    .btn:active{ transform: translateY(1px); }
+    .btn.primary{ background: linear-gradient(180deg, #2a7ab8, #1b4a8a); border-color: #2a5fa6; }
+    .btn.good{ background: linear-gradient(180deg, #1f7f67, #125947); border-color: #1d6a55; }
+    .btn.warn{ background: linear-gradient(180deg, #8a5d1b, #704a16); border-color: #8a6a2a; }
+    .btn.ghost{ background: #0b1022; }
+    .chip{
+      display:inline-flex; align-items:center; gap:8px;
+      background: var(--chip); color: var(--text); border:1px solid var(--border);
+      padding:6px 10px; border-radius:20px; font-size:12px;
+    }
+    .switch{
+      display:inline-flex; align-items:center; gap:10px; font-size:13px; color: var(--muted);
+      cursor: pointer; user-select: none;
+    }
+    .switch input{ appearance: none; width: 36px; height: 20px; background: #2b3358; border-radius: 20px; position: relative; outline: none; transition: background .2s; border: 1px solid var(--border); }
+    .switch input:checked{ background: #2a6b8a; }
+    .switch input::after{
+      content:""; position: absolute; top:2px; left:2px; width:16px; height:16px; background:#e9f0ff; border-radius:50%;
+      transition: transform .2s;
+    }
+    .switch input:checked::after{ transform: translateX(16px); }
+    .split{
+      display:grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    }
+    @media (max-width: 640px){ .split { grid-template-columns: 1fr; } }
+    .hdr-grid{ display:grid; grid-template-columns: 1fr 1fr auto; gap:8px; align-items:center; }
+    .hdr-row{ display: contents; }
+    .small{ font-size: 12px; color: var(--muted); }
+    .muted{ color: var(--muted); }
+    code, pre{ background: var(--code); color: #d9e7ff; border:1px solid var(--border); border-radius: 10px; padding: 10px; }
+    pre{ overflow:auto; max-height: 260px; }
+    .log{ display:flex; flex-direction: column; gap: 10px; }
+    .entry{
+      border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: #0b0f1c;
+    }
+    .entry .summary{
+      display:flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 12px; cursor: pointer; background: #0e1430;
+    }
+    .entry .summary:hover{ background: #131a3d; }
+    .status {
+      padding: 4px 8px; border-radius: 999px; font-size: 12px; border: 1px solid var(--border);
+    }
+    .status.ok{ color: var(--ok); border-color: #295f4f; background: rgba(123,241,168,0.06); }
+    .status.warn{ color: var(--warn); border-color: #6b5a23; background: rgba(255,204,102,0.06); }
+    .status.err{ color: var(--danger); border-color: #6b2323; background: rgba(255,107,107,0.06); }
+    .entry .detail{ display:none; border-top:1px solid var(--border); padding: 10px; background: #0b0f1a; }
+    .kv{ font-family: ui-monospace, monospace; font-size: 12px; color: var(--muted); display:flex; gap: 12px; flex-wrap: wrap; }
+    .kv .item{ background: #0e1430; padding:6px 8px; border-radius:8px; border:1px solid var(--border); }
+    .footer{
+      padding: 10px 16px; color: var(--muted); font-size: 12px; display:flex; justify-content: space-between; align-items:center; gap: 10px;
+    }
+    .inline{
+      display:flex; gap: 8px; flex-wrap: wrap; align-items:center;
+    }
+    .danger{ color: var(--danger); }
+    .success{ color: var(--ok); }
+    .link{ color: var(--accent); text-decoration: underline; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <h1>Webhook Tester</h1>
+          <div class="sub">Final test using a live webhook URL. Send test payloads, view responses, handle signatures, retries, and CORS fallback.</div>
+        </div>
+        <div style="margin-left:auto;" class="inline">
+          <label class="switch" title="Persist settings in this browser">
+            <input type="checkbox" id="persistToggle" />
+            <span>Persist settings</span>
+          </label>
+          <button class="btn ghost" id="clearAll">Reset form</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="wrap">
+      <section id="request">
+        <div class="sec-title">
+          <div>Request</div>
+          <div class="inline">
+            <button class="btn" id="formatJsonBtn" title="Format JSON payload">Format JSON</button>
+            <button class="btn" id="curlBtn" title="Copy cURL command">Copy cURL</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="row">
+            <div style="flex:1 1 100%">
+              <label for="url">Webhook URL</label>
+              <input type="text" id="url" placeholder="https://webhook.site/your-uuid or https://example.com/webhook" />
+              <div class="small">Tip: For quick testing, create a unique endpoint at webhook.site or pipedream.com. Many destinations block cross-origin reads; enable CORS or use 'no-cors' fallback below.</div>
+            </div>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <div style="max-width:160px">
+              <label for="method">Method</label>
+              <select id="method">
+                <option>POST</option>
+                <option>PUT</option>
+                <option>PATCH</option>
+                <option>DELETE</option>
+                <option>GET</option>
+                <option>HEAD</option>
+                <option>OPTIONS</option>
+              </select>
+            </div>
+            <div style="max-width:260px">
+              <label for="ctype">Content-Type</label>
+              <select id="ctype">
+                <option value="application/json">application/json</option>
+                <option value="application/x-www-form-urlencoded">application/x-www-form-urlencoded</option>
+                <option value="text/plain">text/plain</option>
+              </select>
+            </div>
+            <div style="max-width:260px">
+              <label>Auth (optional)</label>
+              <div class="row" style="gap:8px">
+                <select id="authType" style="max-width:140px">
+                  <option value="none">None</option>
+                  <option value="bearer">Bearer</option>
+                  <option value="basic">Basic</option>
+                </select>
+                <input type="text" id="authValue" placeholder="Token or user:pass" />
+              </div>
+              <div class="small">Adds Authorization header automatically.</div>
+            </div>
+            <div>
+              <label for="timeout">Timeout (s)</label>
+              <input type="number" id="timeout" min="1" step="1" value="30" />
+            </div>
+          </div>
+
+          <div style="margin-top:14px">
+            <div class="row" style="justify-content: space-between;">
+              <div class="inline">
+                <strong>Headers</strong>
+                <span class="small muted">(Content-Type set automatically)</span>
+              </div>
+              <div class="inline">
+                <button class="btn" id="addHeader">Add header</button>
+                <button class="btn ghost" id="clearHeaders">Clear headers</button>
+              </div>
+            </div>
+            <div id="headers" class="hdr-grid" style="margin-top:10px"></div>
+          </div>
+
+          <div style="margin-top:14px">
+            <div class="row" style="justify-content: space-between; align-items: flex-end;">
+              <div class="inline">
+                <strong>Payload</strong>
+                <span class="small muted">Select a template:</span>
+                <select id="templatePicker" style="min-width:240px">
+                  <option value="custom">Custom (leave as-is)</option>
+                  <option value="user.created">user.created</option>
+                  <option value="order.placed">order.placed</option>
+                  <option value="ping">ping</option>
+                  <option value="github.push">github.push (simplified)</option>
+                  <option value="stripe.invoice.paid">stripe.invoice.paid (simplified)</option>
+                </select>
+              </div>
+              <label class="switch" title="Send even if JSON is invalid (as plain text)">
+                <input type="checkbox" id="allowInvalidJson" />
+                <span>Allow invalid JSON</span>
+              </label>
+            </div>
+            <textarea id="body" spellcheck="false" placeholder='{"hello":"webhook"}'></textarea>
+            <div class="small">If Content-Type is application/json, body must be valid JSON unless "Allow invalid JSON" is enabled. For form-encoded, a JSON object will be converted to key=value pairs.</div>
+          </div>
+
+          <div style="margin-top:14px">
+            <div class="row" style="align-items: flex-end;">
+              <div style="min-width: 200px">
+                <label class="switch" title="Add HMAC signature header computed over the request body">
+                  <input type="checkbox" id="sigEnable" />
+                  <span>Add HMAC signature</span>
+                </label>
+              </div>
+              <div>
+                <label for="sigAlgo">Algorithm</label>
+                <select id="sigAlgo">
+                  <option value="SHA-256">HMAC SHA-256</option>
+                  <option value="SHA-1">HMAC SHA-1</option>
+                  <option value="SHA-512">HMAC SHA-512</option>
+                </select>
+              </div>
+              <div>
+                <label for="sigHeader">Header name</label>
+                <input type="text" id="sigHeader" value="X-Signature" />
+              </div>
+              <div>
+                <label for="sigPrefix">Header prefix</label>
+                <input type="text" id="sigPrefix" value="sha256=" />
+              </div>
+              <div>
+                <label for="sigSecret">Secret</label>
+                <input type="text" id="sigSecret" placeholder="Do not store in shared devices" />
+              </div>
+              <div>
+                <label class="switch" title="Also include a timestamp header in seconds since epoch">
+                  <input type="checkbox" id="sigTimestamp" />
+                  <span>Add X-Signature-Timestamp</span>
+                </label>
+              </div>
+            </div>
+            <div class="small">Signature is computed over the exact string of the request body (empty string for methods without a body). Secret is never persisted.</div>
+          </div>
+
+          <div style="margin-top:16px" class="split">
+            <div>
+              <div class="row">
+                <button class="btn primary" id="sendBtn">Send request</button>
+                <button class="btn good" id="sendPing">Quick Ping (GET)</button>
+                <button class="btn warn" id="clearLog">Clear log</button>
+              </div>
+              <div class="row" style="margin-top:8px">
+                <label class="switch" title="If the destination blocks cross-origin reads, automatically resend using no-cors (response not readable)">
+                  <input type="checkbox" id="noCorsFallback" />
+                  <span>Fallback to no-cors on CORS error</span>
+                </label>
+                <label class="switch" title="Retry failed requests with exponential backoff">
+                  <input type="checkbox" id="retryToggle" />
+                  <span>Retry on failure</span>
+                </label>
+                <div style="max-width:160px">
+                  <label for="retryCount">Retries</label>
+                  <input type="number" id="retryCount" min="1" value="2" />
+                </div>
+                <div style="max-width:180px">
+                  <label for="retryBase">Backoff base (ms)</label>
+                  <input type="number" id="retryBase" min="100" step="100" value="500" />
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="row">
+                <div>
+                  <label for="sendCount">Times</label>
+                  <input type="number" id="sendCount" min="1" value="1" />
+                </div>
+                <div>
+                  <label for="sendDelay">Delay between (ms)</label>
+                  <input type="number" id="sendDelay" min="0" step="50" value="0" />
+                </div>
+                <button class="btn" id="bulkSend">Send xN</button>
+                <button class="btn ghost" id="exportLog">Export log</button>
+                <button class="btn ghost" id="importHeaders">Import headers JSON</button>
+              </div>
+              <div class="small">Note: Some endpoints do not include CORS headers. In that case, responses may be "opaque". Use a dev proxy/server if you need to inspect the response.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="response">
+        <div class="sec-title">
+          <div>Responses</div>
+          <div class="inline">
+            <span class="chip">Clock: <span id="clock">--:--:--</span></span>
+            <span class="chip">Entries: <span id="entryCount">0</span></span>
+          </div>
+        </div>
+        <div class="card">
+          <div id="log" class="log"></div>
+        </div>
+        <div class="footer">
+          <div>Tip: For live webhooks that block cross-origin, enable "no-cors fallback" to still fire the request. You won't see the response but the destination will receive it.</div>
+          <div class="inline">
+            <span class="small">Theme respects system preference</span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    // Utilities
+    const $ = sel => document.querySelector(sel);
+    const $$ = sel => Array.from(document.querySelectorAll(sel));
+    const persistKey = 'webhookTester.v1';
+    const state = {
+      headers: [],
+      persist: false
+    };
+
+    function nowClock(){
+      const d = new Date(); const pad = n=>String(n).padStart(2,'0');
+      return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    }
+
+    function addHeaderRow(k='', v=''){
+      const wrap = document.createElement('div');
+      wrap.className = 'hdr-row';
+      const key = document.createElement('input');
+      key.type = 'text'; key.placeholder = 'Header name'; key.value = k;
+      const val = document.createElement('input');
+      val.type = 'text'; val.placeholder = 'Header value'; val.value = v;
+      const btns = document.createElement('div');
+      btns.style.display='flex'; btns.style.gap='6px';
+      const rm = document.createElement('button');
+      rm.className='btn'; rm.type='button'; rm.textContent='Remove';
+      const dup = document.createElement('button');
+      dup.className='btn'; dup.type='button'; dup.textContent='Duplicate';
+      btns.append(dup, rm);
+      rm.addEventListener('click', ()=> wrap.remove());
+      dup.addEventListener('click', ()=> addHeaderRow(key.value, val.value));
+      $('#headers').append(wrap);
+      wrap.append(key,val,btns);
+    }
+
+    function getHeadersFromUI(includeAuth=true){
+      const rows = $('#headers');
+      const headers = {};
+      [...rows.querySelectorAll('input[type=text]')].reduce((acc, el, idx, arr)=>{
+        if(idx%2===0){
+          const k = el.value.trim();
+          const v = (arr[idx+1]?.value ?? '').trim();
+          if(k) acc[k] = v;
+        }
+        return acc;
+      }, headers);
+      // Content-Type enforced by selector
+      headers['Content-Type'] = $('#ctype').value;
+      // Authorization helper
+      if(includeAuth){
+        const type = $('#authType').value;
+        const val = $('#authValue').value.trim();
+        if(type==='bearer' && val) headers['Authorization'] = `Bearer ${val}`;
+        if(type==='basic' && val){
+          const encoded = btoa(val);
+          headers['Authorization'] = `Basic ${encoded}`;
+        }
+      }
+      return headers;
+    }
+
+    function jsonTryParse(str){
+      try{ return { ok:true, value: JSON.parse(str) }; }catch(e){ return { ok:false, error:e }; }
+    }
+
+    async function hmacHex(algo, secret, msgStr){
+      const enc = new TextEncoder();
+      const key = await crypto.subtle.importKey('raw', enc.encode(secret), {name:'HMAC', hash:{name:algo}}, false, ['sign']);
+      const sig = await crypto.subtle.sign('HMAC', key, enc.encode(msgStr));
+      const bytes = new Uint8Array(sig);
+      return [...bytes].map(b=>b.toString(16).padStart(2,'0')).join('');
+    }
+
+    function buildCurl({ url, method, headers, body }){
+      const parts = ['curl', '-i', '-X', shellEscape(method), shellEscape(url)];
+      Object.entries(headers || {}).forEach(([k,v])=>{
+        parts.push('-H', shellEscape(`${k}: ${v}`));
+      });
+      if(body != null && body !== '' && !['GET','HEAD'].includes(method.toUpperCase())){
+        parts.push('--data-binary', shellEscape(body));
+      }
+      return parts.join(' ');
+    }
+
+    function shellEscape(s){
+      // Basic POSIX single-quote escape
+      const str = String(s);
+      return `'${str.replace(/'/g, `'\\''`)}'`;
+    }
+
+    function saveState(){
+      if(!state.persist) return;
+      const data = {
+        url: $('#url').value,
+        method: $('#method').value,
+        ctype: $('#ctype').value,
+        authType: $('#authType').value,
+        authValue: $('#authValue').value,
+        timeout: $('#timeout').value,
+        headers: collectHeaderRows(),
+        body: $('#body').value,
+        allowInvalidJson: $('#allowInvalidJson').checked,
+        sig: {
+          enable: $('#sigEnable').checked,
+          algo: $('#sigAlgo').value,
+          header: $('#sigHeader').value,
+          prefix: $('#sigPrefix').value,
+          timestamp: $('#sigTimestamp').checked
+          // secret intentionally not persisted
+        },
+        options: {
+          noCorsFallback: $('#noCorsFallback').checked,
+          retry: $('#retryToggle').checked,
+          retryCount: +$('#retryCount').value,
+          retryBase: +$('#retryBase').value,
+          sendCount: +$('#sendCount').value,
+          sendDelay: +$('#sendDelay').value,
+          template: $('#templatePicker').value
+        }
+      };
+      localStorage.setItem(persistKey, JSON.stringify(data));
+    }
+
+    function loadState(){
+      const raw = localStorage.getItem(persistKey);
+      if(!raw) return;
+      try{
+        const d = JSON.parse(raw);
+        $('#url').value = d.url ?? '';
+        $('#method').value = d.method ?? 'POST';
+        $('#ctype').value = d.ctype ?? 'application/json';
+        $('#authType').value = d.authType ?? 'none';
+        $('#authValue').value = d.authValue ?? '';
+        $('#timeout').value = d.timeout ?? 30;
+        $('#headers').innerHTML = '';
+        (d.headers && Array.isArray(d.headers) ? d.headers : []).forEach(h=> addHeaderRow(h.k, h.v));
+        if($('#headers').children.length === 0) addHeaderRow();
+        $('#body').value = d.body ?? '';
+        $('#allowInvalidJson').checked = !!d.allowInvalidJson;
+        $('#sigEnable').checked = d.sig?.enable ?? false;
+        $('#sigAlgo').value = d.sig?.algo ?? 'SHA-256';
+        $('#sigHeader').value = d.sig?.header ?? 'X-Signature';
+        $('#sigPrefix').value = d.sig?.prefix ?? 'sha256=';
+        $('#sigTimestamp').checked = d.sig?.timestamp ?? false;
+        $('#noCorsFallback').checked = d.options?.noCorsFallback ?? false;
+        $('#retryToggle').checked = d.options?.retry ?? false;
+        $('#retryCount').value = d.options?.retryCount ?? 2;
+        $('#retryBase').value = d.options?.retryBase ?? 500;
+        $('#sendCount').value = d.options?.sendCount ?? 1;
+        $('#sendDelay').value = d.options?.sendDelay ?? 0;
+        $('#templatePicker').value = d.options?.template ?? 'custom';
+      }catch(e){}
+    }
+
+    function collectHeaderRows(){
+      const nodes = $('#headers').querySelectorAll('input[type=text]');
+      const out = [];
+      for(let i=0;i<nodes.length;i+=2){
+        const k = nodes[i].value; const v = nodes[i+1]?.value ?? '';
+        if(k || v) out.push({k,v});
+      }
+      return out;
+    }
+
+    function setTemplate(name){
+      const templates = {
+        "custom": null,
+        "ping": { type: "ping", sent_at: new Date().toISOString(), message: "Hello, webhook!" },
+        "user.created": {
+          id: "evt_" + Math.random().toString(36).slice(2),
+          type: "user.created",
+          data: { id: "usr_" + Math.random().toString(36).slice(2,10), email: "new.user@example.com", name: "New User" },
+          created: Math.floor(Date.now()/1000)
+        },
+        "order.placed": {
+          id: "evt_" + Math.random().toString(36).slice(2),
+          type: "order.placed",
+          data: { order_id: "ord_" + Math.random().toString(36).slice(2,10), amount: 4999, currency: "USD", items: [{sku:"sku_abc", qty:1}] },
+          created: Math.floor(Date.now()/1000)
+        },
+        "github.push": {
+          ref: "refs/heads/main",
+          repository: { name: "example-repo", full_name: "octo/example-repo" },
+          pusher: { name: "octocat" },
+          head_commit: { id: "abc123", message: "Update README", timestamp: new Date().toISOString(), url: "https://github.com/octo/example/commit/abc123" }
+        },
+        "stripe.invoice.paid": {
+          id: "evt_" + Math.random().toString(36).slice(2),
+          type: "invoice.paid",
+          data: { object: { id: "in_" + Math.random().toString(36).slice(2,10), amount_paid: 1299, currency: "usd", customer: "cus_xxx" } },
+          created: Math.floor(Date.now()/1000),
+          livemode: false
+        }
+      };
+      if(name === 'custom') return;
+      const t = templates[name];
+      if(!t) return;
+      $('#body').value = JSON.stringify(t, null, 2);
+      $('#ctype').value = 'application/json';
+    }
+
+    function prettyFormat(){
+      const ctype = $('#ctype').value;
+      if(ctype !== 'application/json') return;
+      const txt = $('#body').value.trim();
+      if(!txt) return;
+      const obj = jsonTryParse(txt);
+      if(!obj.ok){ toast('Invalid JSON'); return; }
+      $('#body').value = JSON.stringify(obj.value, null, 2);
+    }
+
+    function toast(msg, kind='info'){
+      const t = document.createElement('div');
+      t.textContent = msg;
+      t.style.position='fixed'; t.style.right='16px'; t.style.bottom='16px'; t.style.zIndex=9999;
+      t.style.padding='10px 14px'; t.style.borderRadius='10px';
+      t.style.border='1px solid var(--border)'; t.style.boxShadow= 'var(--shadow)';
+      t.style.background = kind==='error'?'#2b1620': kind==='success'?'#123123':'#162033';
+      t.style.color = 'var(--text)';
+      document.body.appendChild(t);
+      setTimeout(()=> t.remove(), 2500);
+    }
+
+    function buildBodyString(){
+      const method = $('#method').value.toUpperCase();
+      if(['GET','HEAD'].includes(method)) return '';
+      const ctype = $('#ctype').value;
+      const raw = $('#body').value;
+      if(ctype === 'application/json'){
+        if(!raw.trim()) return '';
+        const parsed = jsonTryParse(raw);
+        if(!parsed.ok){
+          if($('#allowInvalidJson').checked){
+            return raw; // send as-is
+          } else {
+            throw new Error('Invalid JSON body. Enable "Allow invalid JSON" to send as plain text.');
+          }
+        }
+        return JSON.stringify(parsed.value);
+      } else if(ctype === 'application/x-www-form-urlencoded'){
+        let obj = null;
+        const parsed = jsonTryParse(raw);
+        if(parsed.ok && parsed.value && typeof parsed.value === 'object' && !Array.isArray(parsed.value)){
+          obj = parsed.value;
+        }
+        if(obj){
+          const usp = new URLSearchParams();
+          for(const [k,v] of Object.entries(obj)){
+            usp.append(k, typeof v === 'object' ? JSON.stringify(v) : String(v));
+          }
+          return usp.toString();
+        } else {
+          // Assume user wrote key=value&...
+          return raw;
+        }
+      } else { // text/plain
+        return raw;
+      }
+    }
+
+    async function sendOnce(optionsOverride={}){
+      const controller = new AbortController();
+      const timeoutMs = Math.max(1000, (+$('#timeout').value || 30) * 1000);
+      const timeoutId = setTimeout(()=> controller.abort('timeout'), timeoutMs);
+
+      const url = ($('#url').value || '').trim();
+      if(!url) throw new Error('URL is required');
+      const method = $('#method').value.toUpperCase();
+      const headers = getHeadersFromUI(true);
+      let bodyStr = '';
+      try{
+        bodyStr = buildBodyString();
+      }catch(e){
+        throw e;
+      }
+
+      // Signature
+      if($('#sigEnable').checked){
+        const secret = $('#sigSecret').value;
+        if(!secret) throw new Error('Signature enabled but no secret provided');
+        const algo = $('#sigAlgo').value;
+        const headerName = ($('#sigHeader').value || 'X-Signature').trim();
+        const prefix = $('#sigPrefix').value || '';
+        const payloadToSign = bodyStr ?? '';
+        const hex = await hmacHex(algo, secret, payloadToSign);
+        headers[headerName] = prefix ? `${prefix}${hex}` : hex;
+        if($('#sigTimestamp').checked){
+          headers['X-Signature-Timestamp'] = String(Math.floor(Date.now()/1000));
+        }
+      }
+
+      const reqInit = {
+        method,
+        headers,
+        body: (bodyStr !== '' && !['GET','HEAD'].includes(method)) ? bodyStr : undefined,
+        signal: controller.signal,
+        mode: 'cors',
+        credentials: 'omit',
+        cache: 'no-store',
+        redirect: 'follow'
+      };
+
+      const startedAt = performance.now();
+      const meta = { startedAt: Date.now() };
+
+      try{
+        const res = await fetch(url, reqInit);
+        clearTimeout(timeoutId);
+        const endedAt = performance.now();
+        meta.duration = Math.round(endedAt - startedAt);
+        const status = res.status || 0;
+        const hdrs = {};
+        res.headers.forEach((v,k)=> hdrs[k]=v);
+        let bodyText = '';
+        let truncated = false;
+        try{
+          bodyText = await res.text();
+          if(bodyText.length > 200000){
+            bodyText = bodyText.slice(0,200000);
+            truncated = true;
+          }
+        }catch(e){
+          bodyText = '';
+        }
+        const resp = {
+          ok: res.ok,
+          status,
+          statusText: res.statusText,
+          headers: hdrs,
+          body: bodyText,
+          truncated,
+          type: res.type
+        };
+        return { request: {url, method, headers, body: reqInit.body ?? ''}, response: resp, meta };
+      }catch(err){
+        clearTimeout(timeoutId);
+        // Possibly CORS/network. Optionally retry with no-cors.
+        const fallback = $('#noCorsFallback').checked;
+        if(fallback){
+          try{
+            const noCorsInit = { ...reqInit, mode: 'no-cors' };
+            const res2 = await fetch(url, noCorsInit);
+            const endedAt = performance.now();
+            meta.duration = Math.round(endedAt - startedAt);
+            // Opaque response - cannot read
+            return {
+              request: {url, method, headers, body: reqInit.body ?? ''},
+              response: { ok: false, status: 0, statusText: 'opaque (no-cors)', headers: {}, body: '', truncated:false, type: 'opaque' },
+              meta, error: { message: String(err) }
+            };
+          }catch(err2){
+            return Promise.reject(err2);
+          }
+        }
+        return Promise.reject(err);
+      }
+    }
+
+    function classifyStatus(status, type){
+      if(type==='opaque') return 'warn';
+      if(status === 0) return 'err';
+      if(status >= 200 && status < 300) return 'ok';
+      if(status >= 300 && status < 400) return 'warn';
+      if(status >= 400) return 'err';
+      return 'warn';
+    }
+
+    function fmtBytes(n){
+      if(n == null) return '0 B';
+      const units = ['B','KB','MB','GB']; let i=0; let v=n;
+      while(v >= 1024 && i < units.length-1){ v/=1024; i++; }
+      return `${v.toFixed(v<10 && i>0 ? 1:0)} ${units[i]}`;
+    }
+
+    function safeJsonFormat(s){
+      if(!s) return '';
+      try{ return JSON.stringify(JSON.parse(s), null, 2); }catch{ return s; }
+    }
+
+    function addLogEntry({ request, response, meta }, label='Send'){
+      const idx = ($$('#log .entry').length || 0) + 1;
+      $('#entryCount').textContent = String(idx);
+      const entry = document.createElement('div');
+      entry.className = 'entry';
+      const sum = document.createElement('div');
+      sum.className = 'summary';
+      const left = document.createElement('div');
+      const right = document.createElement('div');
+      right.className = 'inline';
+
+      const statusCls = classifyStatus(response?.status ?? 0, response?.type);
+      const st = document.createElement('span');
+      st.className = `status ${statusCls}`;
+      const statusLabel =
+        response?.type === 'opaque' ? 'opaque (no-cors)' :
+        (response?.status ? `${response.status} ${response.statusText||''}`.trim() : 'error');
+      st.textContent = statusLabel;
+
+      const url = document.createElement('div');
+      url.textContent = `${request.method} ${request.url}`;
+      const kv = document.createElement('div');
+      kv.className = 'kv';
+      kv.innerHTML = `
+        <div class="item">Duration: ${meta.duration ?? '?'} ms</div>
+        <div class="item">Req size: ${fmtBytes((request.body||'').length)}</div>
+        <div class="item">Resp size: ${fmtBytes((response?.body||'').length)}</div>
+        <div class="item">Type: ${response?.type || 'error'}</div>
+      `;
+
+      left.append(url, kv);
+      right.append(st);
+      sum.append(left,right);
+
+      const det = document.createElement('div');
+      det.className='detail';
+      const reqHeadersStr = Object.entries(request.headers||{}).map(([k,v])=>`${k}: ${v}`).join('\n');
+      const respHeadersStr = Object.entries(response?.headers||{}).map(([k,v])=>`${k}: ${v}`).join('\n');
+      const curlStr = buildCurl({ url: request.url, method: request.method, headers: request.headers, body: request.body });
+      det.innerHTML = `
+        <div class="split">
+          <div>
+            <div class="small muted">Request headers</div>
+            <pre><code>${escapeHtml(reqHeadersStr)}</code></pre>
+            <div class="small muted">Request body</div>
+            <pre><code>${escapeHtml(safeJsonFormat(request.body||''))}</code></pre>
+          </div>
+          <div>
+            <div class="small muted">Response headers</div>
+            <pre><code>${escapeHtml(respHeadersStr)}</code></pre>
+            <div class="small muted">Response body</div>
+            <pre><code>${escapeHtml(safeJsonFormat(response?.body||''))}</code></pre>
+          </div>
+        </div>
+        <div style="margin-top:10px">
+          <div class="small muted">cURL</div>
+          <pre><code>${escapeHtml(curlStr)}</code></pre>
+          <div class="inline" style="margin-top:8px">
+            <button class="btn" data-copy="${encodeURIComponent(curlStr)}">Copy cURL</button>
+            <button class="btn" data-copy="${encodeURIComponent(response?.body || '')}">Copy response</button>
+            <button class="btn" data-copy="${encodeURIComponent(request.body || '')}">Copy request</button>
+          </div>
+        </div>
+      `;
+
+      sum.addEventListener('click', ()=>{
+        det.style.display = det.style.display === 'block' ? 'none' : 'block';
+      });
+      det.addEventListener('click', e=>{
+        const btn = e.target.closest('button[data-copy]');
+        if(btn){
+          const txt = decodeURIComponent(btn.getAttribute('data-copy'));
+          navigator.clipboard.writeText(txt);
+          toast('Copied', 'success');
+        }
+      });
+
+      entry.append(sum, det);
+      $('#log').prepend(entry);
+    }
+
+    function escapeHtml(s){
+      return String(s).replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
+    }
+
+    async function sendWithRetry(){
+      const doRetry = $('#retryToggle').checked;
+      const maxRetries = Math.max(0, (+$('#retryCount').value || 0));
+      const base = Math.max(50, (+$('#retryBase').value || 500));
+      let attempt = 0;
+      while(true){
+        try{
+          const res = await sendOnce();
+          addLogEntry(res);
+          return res;
+        }catch(err){
+          attempt++;
+          if(!doRetry || attempt > maxRetries){
+            addLogEntry({
+              request: { url: $('#url').value, method: $('#method').value, headers: getHeadersFromUI(true), body: (()=>{ try{return buildBodyString()}catch{return ''}})() },
+              response: { status: 0, statusText: 'error', headers: {}, body: String(err?.message||err), type: 'error' },
+              meta: { duration: 0 }
+            });
+            toast(`Request failed: ${err?.message || err}`, 'error');
+            throw err;
+          } else {
+            const delay = base * Math.pow(2, attempt-1);
+            await new Promise(r=> setTimeout(r, delay));
+          }
+        }
+      }
+    }
+
+    async function bulkSend(){
+      const n = Math.max(1, (+$('#sendCount').value || 1));
+      const delay = Math.max(0, (+$('#sendDelay').value || 0));
+      for(let i=0;i<n;i++){
+        try{
+          await sendWithRetry();
+        }catch(e){}
+        if(i < n-1 && delay>0) await new Promise(r=> setTimeout(r, delay));
+      }
+    }
+
+    // Event bindings
+    $('#addHeader').addEventListener('click', ()=> addHeaderRow());
+    $('#clearHeaders').addEventListener('click', ()=>{
+      $('#headers').innerHTML='';
+      addHeaderRow();
+    });
+
+    $('#formatJsonBtn').addEventListener('click', prettyFormat);
+
+    $('#templatePicker').addEventListener('change', e=>{
+      setTemplate(e.target.value);
+      saveState();
+    });
+
+    $('#sendBtn').addEventListener('click', async ()=>{
+      try{ await sendWithRetry(); }catch(e){}
+    });
+
+    $('#sendPing').addEventListener('click', async ()=>{
+      const oldMethod = $('#method').value;
+      const oldBody = $('#body').value;
+      const oldCtype = $('#ctype').value;
+      $('#method').value = 'GET';
+      $('#body').value = '';
+      $('#ctype').value = 'text/plain';
+      try{ await sendWithRetry(); }catch(e){}
+      $('#method').value = oldMethod;
+      $('#body').value = oldBody;
+      $('#ctype').value = oldCtype;
+    });
+
+    $('#bulkSend').addEventListener('click', async ()=>{
+      await bulkSend();
+    });
+
+    $('#clearLog').addEventListener('click', ()=>{
+      $('#log').innerHTML = '';
+      $('#entryCount').textContent = '0';
+    });
+
+    $('#exportLog').addEventListener('click', ()=>{
+      const entries = $$('#log .entry').map((el, i)=>{
+        // extract minimal for export
+        const pre = el.querySelectorAll('pre code');
+        return {
+          index: i+1,
+          requestHeaders: pre[0]?.textContent || '',
+          requestBody: pre[1]?.textContent || '',
+          responseHeaders: pre[2]?.textContent || '',
+          responseBody: pre[3]?.textContent || '',
+          status: el.querySelector('.status')?.textContent || ''
+        };
+      });
+      const blob = new Blob([JSON.stringify(entries, null, 2)], {type:'application/json'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'webhook-tester-log.json';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+
+    $('#curlBtn').addEventListener('click', ()=>{
+      let bodyStr = '';
+      try{ bodyStr = buildBodyString(); }catch(e){ bodyStr = ''; }
+      const curl = buildCurl({ url: $('#url').value, method: $('#method').value, headers: getHeadersFromUI(true), body: bodyStr });
+      navigator.clipboard.writeText(curl).then(()=> toast('cURL copied', 'success'));
+    });
+
+    $('#importHeaders').addEventListener('click', async ()=>{
+      const text = prompt('Paste headers as JSON object (e.g. {"X-Key":"abc","X-Foo":"bar"})');
+      if(!text) return;
+      try{
+        const obj = JSON.parse(text);
+        $('#headers').innerHTML='';
+        Object.entries(obj).forEach(([k,v])=> addHeaderRow(k, String(v)));
+        if(!obj['Content-Type']) addHeaderRow('Content-Type', $('#ctype').value);
+      }catch(e){
+        toast('Invalid JSON', 'error');
+      }
+    });
+
+    $('#clearAll').addEventListener('click', ()=>{
+      if(!confirm('Reset form to defaults?')) return;
+      localStorage.removeItem(persistKey);
+      location.reload();
+    });
+
+    $('#persistToggle').addEventListener('change', e=>{
+      state.persist = e.target.checked;
+      if(state.persist) saveState();
+      else localStorage.removeItem(persistKey);
+    });
+
+    // Persist on change
+    ['url','method','ctype','authType','authValue','timeout','body','allowInvalidJson','sigEnable','sigAlgo','sigHeader','sigPrefix','sigTimestamp','noCorsFallback','retryToggle','retryCount','retryBase','sendCount','sendDelay'].forEach(id=>{
+      const el = document.getElementById(id);
+      el.addEventListener('input', saveState);
+      el.addEventListener('change', saveState);
+    });
+
+    // Init
+    addHeaderRow();
+    loadState();
+    // Put a friendly default
+    if(!$('#body').value){
+      $('#body').value = JSON.stringify({ ping: 'hello-webhook', sent_at: new Date().toISOString() }, null, 2);
+    }
+    // Clock
+    $('#clock').textContent = nowClock();
+    setInterval(()=> $('#clock').textContent = nowClock(), 1000);
+
+    // If persisted state existed, enable the toggle
+    if(localStorage.getItem(persistKey)) {
+      state.persist = true; $('#persistToggle').checked = true;
+    }
+
+    // Accessibility: submit on Ctrl+Enter in textarea
+    $('#body').addEventListener('keydown', (e)=>{
+      if((e.ctrlKey || e.metaKey) && e.key === 'Enter'){
+        e.preventDefault();
+        $('#sendBtn').click();
+      }
+    });
+
+    // Warn about CORS once
+    setTimeout(()=>{
+      toast('Note: Some webhooks block CORS. Enable "no-cors fallback" if needed.', 'info');
+    }, 600);
+
+  </script>
+</body>
+</html>
